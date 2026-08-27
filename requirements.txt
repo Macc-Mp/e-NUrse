@@ -1,3 +1,7 @@
 scikit-learn==1.6.1
-sentence-transformers
-streamlit
+sentence-transformers>=3.0.0
+streamlit>=1.30.0
+joblib
+torch
+numpy
+pandas
