@@ -6,7 +6,8 @@ import os
 import re
 import warnings
 warnings.filterwarnings("ignore")
-from sentence_transformers import SentenceTransformer, util
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ── Page Config ──────────────────────────────────────────────
 st.set_page_config(
@@ -219,7 +220,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Search defaults (no user-facing settings) ─────────────────
-threshold = 0.60
+threshold = 0.30
 max_words = 1000
 
 # ── Sidebar ──────────────────────────────────────────────────
@@ -244,7 +245,6 @@ with st.sidebar:
     )
     st.markdown(
         "- TF-IDF+N-gram and Linear SVC: Intent Prediction (main model).\n"
-        "- SBERT: sentence lookup in the dataset."
     )
     st.markdown("**Objectives:**")
     st.markdown(
@@ -351,25 +351,26 @@ def clean_response(text: str) -> str:
     return text.strip()
 
 
-def semantic_truncate(text: str, query: str, embedder, max_words: int = 200,
-                      min_words: int = 50, truncation_stride: int = 5) -> str:
+def semantic_truncate(text: str, query: str, tfidf_vectorizer, corpus_tfidf, best_idx: int,
+                      max_words: int = 200, min_words: int = 50, truncation_stride: int = 5) -> str:
     words = text.split()
     if len(words) <= max_words:
         return text
 
-    query_embedding = embedder.encode(query, convert_to_tensor=True)
+    query_vec = tfidf_vectorizer.transform([query])
+    doc_vec = corpus_tfidf[best_idx]
     best_truncation = text
     highest_similarity = -1
 
     for i in range(len(words) - min_words, max_words - 1, -truncation_stride):
-        current_truncated_text = " ".join(words[:i])
-        if not current_truncated_text:
+        current_text = " ".join(words[:i])
+        if not current_text:
             continue
-        truncated_embedding = embedder.encode(current_truncated_text, convert_to_tensor=True)
-        similarity = util.cos_sim(query_embedding, truncated_embedding).item()
+        trunc_vec = tfidf_vectorizer.transform([current_text])
+        similarity = cosine_similarity(trunc_vec, doc_vec)[0][0]
         if similarity > highest_similarity:
             highest_similarity = similarity
-            best_truncation = current_truncated_text
+            best_truncation = current_text
 
     if len(best_truncation.split()) > max_words:
         return " ".join(words[:max_words]) + "..."
@@ -380,22 +381,30 @@ def semantic_truncate(text: str, query: str, embedder, max_words: int = 200,
 def load_assets():
     base = os.path.dirname(os.path.abspath(__file__))
     intent_model = joblib.load(os.path.join(base, "intent_pipeline_model.joblib"))
-    corpus_embeddings = joblib.load(os.path.join(base, "corpus_embeddings.joblib"))
 
-    # Load the pre-split training data directly (matches corpus_embeddings row-for-row)
+    # Load the pre-split training data
     train_df = pd.read_csv(os.path.join(base, "train_data.csv")).reset_index(drop=True)
 
-    # Load SBERT fresh from HuggingFace (pickled version is incompatible)
-    sbert_embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    # Build TF-IDF retrieval index from corpus
+    corpus_texts = (
+        train_df["focus_area"].fillna("").astype(str) + " " +
+        train_df["intent"].fillna("").astype(str) + " " +
+        train_df["query"].fillna("").astype(str)
+    ).tolist()
 
-    return intent_model, sbert_embedder, corpus_embeddings, train_df
+    tfidf_vectorizer = TfidfVectorizer(
+        ngram_range=(1, 2), max_features=50000, stop_words="english"
+    )
+    corpus_tfidf = tfidf_vectorizer.fit_transform(corpus_texts)
+
+    return intent_model, tfidf_vectorizer, corpus_tfidf, train_df
 
 
 with st.spinner("Loading medical models..."):
-    intent_model, sbert_embedder, corpus_embeddings, train_df = load_assets()
+    intent_model, tfidf_vectorizer, corpus_tfidf, train_df = load_assets()
 
 # ── Response Logic ───────────────────────────────────────────
-def get_response(user_query: str, threshold: float = 0.60, max_words: int = 200):
+def get_response(user_query: str, threshold: float = 0.85, max_words: int = 200):
     clean_query = user_query.strip().lower()
 
     # Step 1: Guardrail for small talk and greetings
@@ -411,20 +420,51 @@ def get_response(user_query: str, threshold: float = 0.60, max_words: int = 200)
             ),
         }
 
+    # Step 1b: Reject non-medical or gibberish queries
+    words = re.findall(r'[a-z]+', clean_query)
+    if len(words) < 2:
+        return {
+            "intent": "rejected",
+            "confidence": 0.0,
+            "urgency_score": 0,
+            "matched_focus": None,
+            "response": (
+                "I can only answer verified medical and health questions. "
+                "Try asking about symptoms, conditions, treatments, or exams."
+            ),
+        }
+
+    # Step 1c: Check vocabulary overlap — reject if too few words are medical
+    vocab = set(tfidf_vectorizer.vocabulary_.keys())
+    query_words = [w for w in words if w not in {"the", "a", "an", "is", "are", "of", "for", "to", "in", "and", "or", "what", "how", "do", "does", "can", "my", "i"}]
+    if query_words:
+        overlap = sum(1 for w in query_words if w in vocab) / len(query_words)
+        if overlap < 0.3:
+            return {
+                "intent": "rejected",
+                "confidence": 0.0,
+                "urgency_score": 0,
+                "matched_focus": None,
+                "response": (
+                    "I can only answer verified medical and health questions. "
+                    "Try asking about symptoms, conditions, treatments, or exams."
+                ),
+            }
+
     # Step 2: Score urgency
     urgency_score = score_urgency(user_query)
 
     # Step 3: Predict intent
     predicted_intent = intent_model.predict([user_query])[0]
 
-    # Step 4: Dense search query formulation (matches notebook: intent + query)
+    # Step 4: TF-IDF retrieval query formulation (matches notebook: intent + query)
     search_query = f"{predicted_intent} {user_query}"
-    query_vec = sbert_embedder.encode(search_query, convert_to_tensor=True)
+    query_vec = tfidf_vectorizer.transform([search_query])
 
-    # Step 5: Semantic search using util.cos_sim (matches notebook)
-    scores = util.cos_sim(query_vec, corpus_embeddings)[0]
-    best_idx = int(scores.argmax().item())
-    best_score = float(scores[best_idx].item())
+    # Step 5: TF-IDF cosine similarity search
+    scores = cosine_similarity(query_vec, corpus_tfidf)[0]
+    best_idx = int(scores.argmax())
+    best_score = float(scores[best_idx])
 
     # Step 6: Strict confidence guardrail
     if best_score < threshold:
@@ -443,7 +483,7 @@ def get_response(user_query: str, threshold: float = 0.60, max_words: int = 200)
     matched_row = train_df.iloc[best_idx]
     raw_response = str(matched_row["response"])
     clean_raw = clean_response(raw_response)
-    final_answer = semantic_truncate(clean_raw, user_query, sbert_embedder, max_words=max_words)
+    final_answer = semantic_truncate(clean_raw, user_query, tfidf_vectorizer, corpus_tfidf, best_idx, max_words=max_words)
 
     # Step 8: Urgency intervention
     if urgency_score < -1:
