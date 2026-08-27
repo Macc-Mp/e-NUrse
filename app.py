@@ -31,7 +31,7 @@ st.markdown("""
     .chat-header h1 {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #0f766e;
+        color: #35408e;
         margin-bottom: 0.2rem;
     }
     .chat-header p {
@@ -139,16 +139,65 @@ st.markdown("""
         color: white;
         border-color: #0ea5e9;
     }
-    /* Compact sidebar topic buttons */
+    /* ── Sidebar Blue Theme (#35408e) ── */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #35408e 0%, #2a3270 100%);
+    }
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] h1,
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] h2,
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] h3,
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] p,
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] span,
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] li {
+        color: #e0e7ff !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] strong {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] a {
+        color: #93c5fd !important;
+        text-decoration: none;
+    }
+    section[data-testid="stSidebar"] [data-testid="stMarkdown"] a:hover {
+        color: #ffffff !important;
+    }
+    section[data-testid="stSidebar"] hr {
+        border-color: rgba(255,255,255,0.2) !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stImage"] img {
+        filter: brightness(0) invert(1);
+    }
+    /* Sidebar buttons */
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
-        padding: 2px 10px;
+        padding: 4px 10px;
         font-size: 0.72rem;
         line-height: 1.2;
         border-radius: 16px;
         min-height: 0;
+        background: rgba(255,255,255,0.15);
+        color: #ffffff;
+        border: 1px solid rgba(255,255,255,0.25);
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+        background: #ffffff;
+        color: #35408e;
+        border-color: #ffffff;
     }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {
         gap: 0.2rem;
+    }
+    /* Clear chat button - red accent */
+    section[data-testid="stSidebar"] div[data-testid="stButton"]:last-of-type > button {
+        background: rgba(220,38,38,0.2);
+        color: #fca5a5;
+        border-color: rgba(220,38,38,0.3);
+    }
+    section[data-testid="stSidebar"] div[data-testid="stButton"]:last-of-type > button:hover {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -231,8 +280,8 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown('<p class="sidebar-info">Dev: <b>Manalo, Caleb</b></p>', unsafe_allow_html=True)
-    st.markdown('<p class="sidebar-info">Dev: <b>Paule, Moises</b></p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#c7d2fe; font-size:0.82rem; margin:0;">Dev: <b style="color:#ffffff;">Manalo, Caleb</b></p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#c7d2fe; font-size:0.82rem; margin:0;">Dev: <b style="color:#ffffff;">Paule, Moises</b></p>', unsafe_allow_html=True)
 # ── Urgency Lexicon & Conversational Filter ───────────────────
 URGENCY_LEXICON = {
     # High urgency (score: -2)
