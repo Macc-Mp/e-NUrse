@@ -51,6 +51,16 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
+    .urgency-note {
+        background: #fee2e2;
+        border-left: 4px solid #dc2626;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.82rem;
+        color: #991b1b;
+        margin-bottom: 1rem;
+    }
+
     .stChatMessage {
         border-radius: 16px;
         padding: 0.5rem 1rem;
@@ -335,6 +345,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div class="urgency-note">
+    <b>🚨 Urgency Guide</b> — keywords detected by the custom lexicon:<br>
+    <span class="tag red">🔴 high</span> emergency, chest pain, severe, bleeding, stroke, seizure, difficulty breathing<br>
+    <span class="tag orange">🟠 moderate</span> pain, fever, infection, nausea, cough, rash, headache<br>
+    <span class="tag gray">⚪ neutral</span> no urgent keywords detected
+</div>
+""", unsafe_allow_html=True)
+
 # ── Search defaults (no user-facing settings) ─────────────────
 threshold = 0.30
 max_words = 1000
@@ -554,7 +573,7 @@ with st.spinner("Loading medical models..."):
     intent_model, tfidf_vectorizer, corpus_tfidf, train_df = load_assets()
 
 # ── Response Logic ───────────────────────────────────────────
-def get_response(user_query: str, threshold: float = 0.85, max_words: int = 200):
+def get_response(user_query: str, threshold: float = 0.30, max_words: int = 200):
     clean_query = user_query.strip().lower()
 
     # Step 1: Guardrail for small talk and greetings
@@ -572,22 +591,29 @@ def get_response(user_query: str, threshold: float = 0.85, max_words: int = 200)
 
     # Step 1b: Reject non-medical or gibberish queries
     words = re.findall(r'[a-z]+', clean_query)
-    if len(words) < 2:
-        return {
-            "intent": "rejected",
-            "confidence": 0.0,
-            "urgency_score": 0,
-            "matched_focus": None,
-            "response": (
-                "I can only answer verified medical and health questions. "
-                "Try asking about symptoms, conditions, treatments, or exams."
-            ),
-        }
-
-    # Step 1c: Check vocabulary overlap — reject if too few words are medical
     vocab = set(tfidf_vectorizer.vocabulary_.keys())
-    query_words = [w for w in words if w not in {"the", "a", "an", "is", "are", "of", "for", "to", "in", "and", "or", "what", "how", "do", "does", "can", "my", "i"}]
-    if query_words:
+    stop = {"the", "a", "an", "is", "are", "of", "for", "to", "in", "and", "or",
+            "what", "how", "do", "does", "can", "my", "i", "have", "with", "has"}
+
+    if len(words) < 2 and words:
+        # Single word: allow if it's in the medical vocabulary
+        if words[0] in vocab:
+            pass
+        else:
+            return {
+                "intent": "rejected",
+                "confidence": 0.0,
+                "urgency_score": 0,
+                "matched_focus": None,
+                "response": (
+                    "I can only answer verified medical and health questions. "
+                    "Try asking about symptoms, conditions, treatments, or exams."
+                ),
+            }
+
+    # Step 1c: Check vocabulary overlap for multi-word queries
+    query_words = [w for w in words if w not in stop]
+    if len(query_words) >= 1:
         overlap = sum(1 for w in query_words if w in vocab) / len(query_words)
         if overlap < 0.3:
             return {
