@@ -144,6 +144,122 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #35408e 0%, #2a3270 100%);
     }
+    /* Brand header */
+    .side-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 4px 16px 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        margin-bottom: 12px;
+    }
+    .side-logo {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 14px;
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .side-brand h2 {
+        margin: 0;
+        color: #ffffff;
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .side-brand p {
+        margin: 0;
+        color: #a5b4fc;
+        font-size: 0.78rem;
+    }
+    /* Cards */
+    .side-card {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+    }
+    .side-card h4 {
+        margin: 0 0 4px 0;
+        color: #ffffff;
+        font-size: 0.85rem;
+    }
+    .side-card p {
+        margin: 0;
+        color: #c7d2fe;
+        font-size: 0.78rem;
+        line-height: 1.4;
+    }
+    .side-card ul {
+        margin: 0;
+        padding-left: 16px;
+        color: #c7d2fe;
+        font-size: 0.78rem;
+        line-height: 1.6;
+    }
+    .side-card b {
+        color: #ffffff;
+    }
+    .side-div-title {
+        color: #a5b4fc;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin: 0 0 8px 0;
+    }
+    /* Dev credits footer */
+    .side-footer {
+        text-align: center;
+        padding: 10px 14px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+    }
+    .footer-title {
+        color: #a5b4fc;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        margin: 0 0 8px 0;
+    }
+    .dev-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(53,64,142,0.6);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 999px;
+        padding: 3px 12px 3px 3px;
+        margin: 4px auto;
+        width: fit-content;
+        color: #e0e7ff;
+        font-size: 0.78rem;
+        font-weight: 500;
+    }
+    .dev-avatar {
+        background: #4f46e5;
+        color: #ffffff;
+        border-radius: 999px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.62rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .footer-copy {
+        color: #818cf8;
+        font-size: 0.7rem;
+        margin: 8px 0 0 0;
+    }
     section[data-testid="stSidebar"] [data-testid="stMarkdown"] h1,
     section[data-testid="stSidebar"] [data-testid="stMarkdown"] h2,
     section[data-testid="stSidebar"] [data-testid="stMarkdown"] h3,
@@ -238,50 +354,84 @@ GUIDE_TOPICS = [
 ]
 
 with st.sidebar:
-    
-    st.markdown(
-        "A RAG Health guidance assistant built on the "
-        "[MedQuAD](https://github.com/abachaa/MedQuAD) dataset\n "
-    )
-    st.markdown(
-        "- TF-IDF+N-gram and Linear SVC: Intent Prediction (main model).\n"
-    )
-    st.markdown("**Objectives:**")
-    st.markdown(
-        "- Low cost; No LLM, No Limit.\n"
-        "- Suggest follow-up questions."
-    )
-    st.markdown("**Limitations:**")
-    st.markdown(
-        "- Limited to information of dataset (13k records).\n"
-    )
-    st.markdown("---")
+    # ── Logo & Brand ──
+    st.markdown("""
+    <div class="side-brand">
+        <div class="side-logo">⚕</div>
+        <div>
+            <h2>e-Nurse</h2>
+            <p>School Health Guidance</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("### Quick Topics")
+    # ── About card ──
+    st.markdown("""
+    <div class="side-card">
+        <h4>📖 About</h4>
+        <p>A RAG health assistant built on the MedQuAD dataset</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="side-card">
+        <h4>🧠 How It Works</h4>
+        <ul>
+            <li><b>TF-IDF + Linear SVC</b> — intent prediction</li>
+            <li><b>Semantic search</b> — answer retrieval</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="side-card">
+        <h4>🎯 Objectives</h4>
+        <ul>
+            <li>Low cost — no LLM, no limits</li>
+            <li>Follow-up suggestions</li>
+            <li>13k records of verified data</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown('<h3 class="side-div-title">QUICK TOPICS</h3>', unsafe_allow_html=True)
     # 2-column grid layout for compact display
     for i in range(0, len(GUIDE_TOPICS), 2):
         col1, col2 = st.sidebar.columns(2)
         with col1:
             topic, query = GUIDE_TOPICS[i]
-            if st.button(topic, key=f"guide_{i}"):
+            if st.button(f"🌡 {topic}", key=f"guide_{i}"):
                 st.session_state.pending_query = query
                 st.rerun()
         if i + 1 < len(GUIDE_TOPICS):
             with col2:
                 topic, query = GUIDE_TOPICS[i + 1]
-                if st.button(topic, key=f"guide_{i+1}"):
+                if st.button(f"🌡 {topic}", key=f"guide_{i+1}"):
                     st.session_state.pending_query = query
                     st.rerun()
 
     st.markdown("---")
-    st.markdown("### Settings")
-    if st.button("Clear chat"):
+    st.markdown('<h3 class="side-div-title">SETTINGS</h3>', unsafe_allow_html=True)
+    if st.button("🗑 Clear chat"):
         st.session_state.messages = []
         st.rerun()
 
     st.markdown("---")
-    st.markdown('<p style="color:#c7d2fe; font-size:0.82rem; margin:0;">Dev: <b style="color:#ffffff;">Manalo, Caleb</b></p>', unsafe_allow_html=True)
-    st.markdown('<p style="color:#c7d2fe; font-size:0.82rem; margin:0;">Dev: <b style="color:#ffffff;">Paule, Moises</b></p>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="side-footer">
+        <p class="footer-title">DEVELOPED BY</p>
+        <div class="dev-pill">
+            <span class="dev-avatar">CM</span>
+            <span>Manalo, Caleb</span>
+        </div>
+        <div class="dev-pill">
+            <span class="dev-avatar">MP</span>
+            <span>Paule, Moises</span>
+        </div>
+        <p class="footer-copy">BSCS 231-A • 2026</p>
+    </div>
+    """, unsafe_allow_html=True)
 # ── Urgency Lexicon & Conversational Filter ───────────────────
 URGENCY_LEXICON = {
     # High urgency (score: -2)
